@@ -71,15 +71,15 @@ def train(args):
                         model.prev_state: state}
                     state = sess.run(model.next_state, feed)
                     states.append(state)
-                states, final_state = states[:-1], states[-1]
+                states, _final_state = states[:-1], states[-1]
                 # backward pass
                 losses = []
                 for state, x, y in reversed(zip(states, xs, ys)):
                     feed = {
-                        model.input_data: xs[-1],
-                        model.prev_state: states[-2],
+                        model.input_data: x,
+                        model.prev_state: state,
                         # TODO - prev_grads
-                        model.target: ys[1]}
+                        model.target: y}
                     # FIXME - will this loss work?
                     # TODO - apply previous char losses?
                     _, loss = sess.run([model.train_op, model.cost], feed)
