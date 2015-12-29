@@ -57,10 +57,13 @@ class Model():
         self.cost = tf.reduce_sum(loss) / args.batch_size
         self.lr = tf.Variable(0.0, trainable=False)
         tvars = tf.trainable_variables()
-        # FIXME???
-        # self.prev_grads = [tf.ones([], dtype=tf.float32)
+        self.prev_grads = [
+            tf.ones(v.get_shape(), dtype=v.dtype) for v in tvars]
         self.grads, _ = tf.clip_by_global_norm(
-            tf.gradients(self.cost, tvars), #self.prev_grads),
+            # apply gradients from previous step
+            # FIXME - is this correct?
+            [tf.mul(prev_g, g) for prev_g, g in zip(
+                self.prev_grads, tf.gradients(self.cost, tvars))],
             args.grad_clip)
         optimizer = tf.train.AdamOptimizer(self.lr)
         self.train_op = optimizer.apply_gradients(zip(self.grads, tvars))

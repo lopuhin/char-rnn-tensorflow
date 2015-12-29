@@ -74,15 +74,17 @@ def train(args):
                 states, _final_state = states[:-1], states[-1]
                 # backward pass
                 losses = []
+                prev_grads = [v.eval() for v in model.prev_grads]
                 for state, x, y in reversed(zip(states, xs, ys)):
                     feed = {
                         model.input_data: x,
                         model.prev_state: state,
-                        # TODO - prev_grads
                         model.target: y}
-                    # FIXME - will this loss work?
-                    # TODO - apply previous char losses?
-                    _, loss = sess.run([model.train_op, model.cost], feed)
+                    feed.update(zip(model.prev_grads, prev_grads))
+                    # FIXME - do we really apply previous char losses?
+                    result = sess.run(
+                        [model.train_op, model.cost] + model.grads, feed)
+                    loss, prev_grads = result[1], result[2:]
                     losses.append(loss)
                 train_loss = np.mean(losses)
                 end = time.time()
