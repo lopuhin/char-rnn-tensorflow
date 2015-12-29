@@ -1,13 +1,11 @@
-import numpy as np
 import tensorflow as tf
 
 import argparse
-import time
 import os
 import cPickle
 
-from utils import TextLoader
 from model import Model
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -19,6 +17,7 @@ def main():
                        help='prime text')
     args = parser.parse_args()
     sample(args)
+
 
 def sample(args):
     with open(os.path.join(args.save_dir, 'config.pkl')) as f:
@@ -33,6 +32,7 @@ def sample(args):
         if ckpt and ckpt.model_checkpoint_path:
             saver.restore(sess, ckpt.model_checkpoint_path)
             print model.sample(sess, chars, vocab, args.n, args.prime)
+
 
 if __name__ == '__main__':
     main()

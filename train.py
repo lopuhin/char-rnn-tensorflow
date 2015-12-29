@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 import argparse
@@ -8,6 +7,7 @@ import cPickle
 
 from utils import TextLoader
 from model import Model
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -38,6 +38,7 @@ def main():
     args = parser.parse_args()
     train(args)
 
+
 def train(args):
     data_loader = TextLoader(args.data_dir, args.batch_size, args.seq_length)
     args.vocab_size = data_loader.vocab_size
@@ -53,14 +54,19 @@ def train(args):
         tf.initialize_all_variables().run()
         saver = tf.train.Saver(tf.all_variables())
         for e in xrange(args.num_epochs):
-            sess.run(tf.assign(model.lr, args.learning_rate * (args.decay_rate ** e)))
+            sess.run(tf.assign(
+                model.lr, args.learning_rate * (args.decay_rate ** e)))
             data_loader.reset_batch_pointer()
             state = model.initial_state.eval()
             for b in xrange(data_loader.num_batches):
                 start = time.time()
                 x, y = data_loader.next_batch()
-                feed = {model.input_data: x, model.targets: y, model.initial_state: state}
-                train_loss, state, _ = sess.run([model.cost, model.final_state, model.train_op], feed)
+                feed = {
+                    model.input_data: x,
+                    model.targets: y,
+                    model.initial_state: state}
+                train_loss, state, _ = sess.run(
+                    [model.cost, model.final_state, model.train_op], feed)
                 end = time.time()
                 print "{}/{} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}" \
                     .format(e * data_loader.num_batches + b,
@@ -68,8 +74,10 @@ def train(args):
                             e, train_loss, end - start)
                 if (e * data_loader.num_batches + b) % args.save_every == 0:
                     checkpoint_path = os.path.join(args.save_dir, 'model.ckpt')
-                    saver.save(sess, checkpoint_path, global_step = e * data_loader.num_batches + b)
+                    saver.save(sess, checkpoint_path,
+                               global_step=e * data_loader.num_batches + b)
                     print "model saved to {}".format(checkpoint_path)
+
 
 if __name__ == '__main__':
     main()
