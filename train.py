@@ -5,6 +5,8 @@ import time
 import os
 import cPickle
 
+import numpy as np
+
 from utils import TextLoader
 from model import Model
 
@@ -57,16 +59,32 @@ def train(args):
             sess.run(tf.assign(
                 model.lr, args.learning_rate * (args.decay_rate ** e)))
             data_loader.reset_batch_pointer()
-            state = model.initial_state.eval()
+            state = model.prev_state.eval()
             for b in xrange(data_loader.num_batches):
                 start = time.time()
-                x, y = data_loader.next_batch()
-                feed = {
-                    model.input_data: x,
-                    model.targets: y,
-                    model.initial_state: state}
-                train_loss, state, _ = sess.run(
-                    [model.cost, model.final_state, model.train_op], feed)
+                xs, ys = data_loader.next_batch()
+                states = [state]
+                # forward pass
+                for x in xs:
+                    feed = {
+                        model.input_data: x,
+                        model.prev_state: state}
+                    state = sess.run(model.next_state, feed)
+                    states.append(state)
+                states, final_state = states[:-1], states[-1]
+                # backward pass
+                losses = []
+                for state, x, y in reversed(zip(states, xs, ys)):
+                    feed = {
+                        model.input_data: xs[-1],
+                        model.prev_state: states[-2],
+                        # TODO - prev_grads
+                        model.target: ys[1]}
+                    # FIXME - will this loss work?
+                    # TODO - apply previous char losses?
+                    _, loss = sess.run([model.train_op, model.cost], feed)
+                    losses.append(loss)
+                train_loss = np.mean(losses)
                 end = time.time()
                 print "{}/{} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}" \
                     .format(e * data_loader.num_batches + b,
